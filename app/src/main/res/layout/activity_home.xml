@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottomNavigation"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvBalanceHome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Balance: Rp 0"
+            android:textSize="20sp"
+            android:layout_marginBottom="24dp"/>
+
+        <GridLayout
+            android:id="@+id/slotGrid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:columnCount="3"
+            android:rowCount="3"
+            android:layout_marginBottom="32dp"
+            android:background="#DDDDDD"
+            android:padding="4dp">
+
+            <!-- 9 ImageViews for the 3x3 slot -->
+            <ImageView android:id="@+id/slot1" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot1"/>
+            <ImageView android:id="@+id/slot2" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot2"/>
+            <ImageView android:id="@+id/slot3" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot3"/>
+            <ImageView android:id="@+id/slot4" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot4"/>
+            <ImageView android:id="@+id/slot5" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot5"/>
+            <ImageView android:id="@+id/slot6" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot6"/>
+            <ImageView android:id="@+id/slot7" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot7"/>
+            <ImageView android:id="@+id/slot8" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot8"/>
+            <ImageView android:id="@+id/slot9" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerInside" android:background="#FFFFFF" android:layout_margin="2dp" android:src="@android:drawable/btn_star" android:contentDescription="slot9"/>
+        </GridLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cost: Rp 10.000 / Pull"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnSpin"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="SPIN!"/>
+
+    </LinearLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:menu="@menu/bottom_nav_menu" />
+
+</RelativeLayout>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "323484275607",
+    "project_id": "uas-bobile",
+    "storage_bucket": "uas-bobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:323484275607:android:31027239dc5d5b3ae5aad2",
+        "android_client_info": {
+          "package_name": "com.example.projek_uas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfSwsGGAqNpvu_a-oN0SA4vM0G2A_smp4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
