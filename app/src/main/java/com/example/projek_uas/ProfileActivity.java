@@ -2,7 +2,13 @@ package com.example.projek_uas;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -21,6 +27,8 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private DatabaseReference mUserRef;
     private User currentUser;
+    private static final String TAG = "ProfileActivity";
+    private static final String DB_URL = "https://uas-bobile-default-rtdb.asia-southeast1.firebasedatabase.app/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +43,50 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        mUserRef = FirebaseDatabase.getInstance().getReference("users").child(mAuth.getUid());
-        loadUserData();
+        try {
+            mUserRef = FirebaseDatabase.getInstance(DB_URL).getReference("users").child(mAuth.getUid());
+            loadUserData();
+        } catch (Exception e) {
+            Log.e(TAG, "DB Init Error", e);
+        }
+
+        binding.btnUpdateName.setOnClickListener(v -> {
+            String newName = binding.etProfileName.getText().toString().trim();
+            if (newName.isEmpty()) {
+                Toast.makeText(this, "Nama tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            mUserRef.child("name").setValue(newName).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Toast.makeText(ProfileActivity.this, "Nama diperbarui!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        binding.btnTopUp.setOnClickListener(v -> {
+            if (currentUser == null) {
+                Toast.makeText(this, "Menghubungkan ke server...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showTopUpDialog();
+        });
+
+        binding.btnWithdraw.setOnClickListener(v -> {
+            if (currentUser == null) {
+                Toast.makeText(this, "Menghubungkan ke server...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showWithdrawDialog();
+        });
+
+        binding.btnLogout.setOnClickListener(v -> {
+            mAuth.signOut();
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
 
         binding.bottomNavigation.setSelectedItemId(R.id.nav_profile);
         binding.bottomNavigation.setOnItemSelectedListener(item -> {
@@ -50,72 +100,135 @@ public class ProfileActivity extends AppCompatActivity {
             }
             return id == R.id.nav_profile;
         });
-
-        binding.btnUpdateName.setOnClickListener(v -> updateName());
-        binding.btnTopUp.setOnClickListener(v -> showTopUpDialog());
-        binding.btnLogout.setOnClickListener(v -> {
-            mAuth.signOut();
-            startActivity(new Intent(this, LoginActivity.class));
-            finishAffinity();
-        });
     }
 
     private void loadUserData() {
         mUserRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                currentUser = snapshot.getValue(User.class);
-                if (currentUser != null) {
-                    binding.etProfileName.setText(currentUser.name);
-                    binding.tvProfileBalance.setText("Current Balance: Rp " + String.format("%,d", currentUser.balance));
+                if (snapshot.exists()) {
+                    currentUser = snapshot.getValue(User.class);
+                    if (currentUser != null) {
+                        if (!binding.etProfileName.hasFocus()) {
+                            binding.etProfileName.setText(currentUser.name);
+                        }
+                        binding.tvProfileBalance.setText("Current Balance: Rp " + String.format("%,d", currentUser.balance));
+                    }
                 }
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Load Error: " + error.getMessage());
+            }
         });
-    }
-
-    private void updateName() {
-        String newName = binding.etProfileName.getText().toString().trim();
-        if (!newName.isEmpty()) {
-            mUserRef.child("name").setValue(newName)
-                    .addOnSuccessListener(aVoid -> Toast.makeText(ProfileActivity.this, "Name updated!", Toast.LENGTH_SHORT).show());
-        }
     }
 
     private void showTopUpDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Top Up Saldo");
+        
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 40, 50, 10);
 
         final EditText input = new EditText(this);
-        input.setHint("Nominal (e.g. 50000)");
+        input.setHint("Nominal Top Up");
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        builder.setView(input);
+        layout.addView(input);
 
-        builder.setPositiveButton("OK", (dialog, which) -> {
-            String amountStr = input.getText().toString();
-            if (!amountStr.isEmpty()) {
-                long amount = Long.parseLong(amountStr);
-                showPaymentMethodDialog(amount);
+        final TextView label = new TextView(this);
+        label.setText("Pilih Metode:");
+        label.setPadding(0, 20, 0, 10);
+        layout.addView(label);
+
+        final RadioGroup methods = new RadioGroup(this);
+        RadioButton rbQris = new RadioButton(this);
+        rbQris.setText("QRIS");
+        RadioButton rbBank = new RadioButton(this);
+        rbBank.setText("Transfer Bank");
+        methods.addView(rbQris);
+        methods.addView(rbBank);
+        rbQris.setChecked(true);
+        layout.addView(methods);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Top Up", (dialog, which) -> {
+            String val = input.getText().toString();
+            if (!val.isEmpty()) {
+                try {
+                    long amount = Long.parseLong(val);
+                    long newBalance = currentUser.balance + amount;
+                    mUserRef.child("balance").setValue(newBalance).addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(ProfileActivity.this, "Top Up Berhasil!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } catch (Exception e) {
+                    Toast.makeText(this, "Nominal tidak valid", Toast.LENGTH_SHORT).show();
+                }
             }
         });
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
-
+        builder.setNegativeButton("Batal", null);
         builder.show();
     }
 
-    private void showPaymentMethodDialog(long amount) {
-        String[] methods = {"QRIS", "Transfer Bank"};
+    private void showWithdrawDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Pilih Metode Pembayaran");
-        builder.setItems(methods, (dialog, which) -> {
-            // Demo only: immediately add balance
-            if (currentUser != null) {
-                long newBalance = currentUser.balance + amount;
-                mUserRef.child("balance").setValue(newBalance)
-                        .addOnSuccessListener(aVoid -> Toast.makeText(ProfileActivity.this, "Top up berhasil! Saldo bertambah.", Toast.LENGTH_SHORT).show());
+        builder.setTitle("Tarik Saldo");
+        
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 40, 50, 10);
+
+        final EditText input = new EditText(this);
+        input.setHint("Nominal Penarikan");
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        layout.addView(input);
+
+        final TextView label = new TextView(this);
+        label.setText("Pilih Metode:");
+        label.setPadding(0, 20, 0, 10);
+        layout.addView(label);
+
+        final RadioGroup methods = new RadioGroup(this);
+        RadioButton rbQris = new RadioButton(this);
+        rbQris.setText("QRIS");
+        RadioButton rbBank = new RadioButton(this);
+        rbBank.setText("Transfer Bank");
+        methods.addView(rbQris);
+        methods.addView(rbBank);
+        rbQris.setChecked(true);
+        layout.addView(methods);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Tarik", (dialog, which) -> {
+            String val = input.getText().toString();
+            if (!val.isEmpty()) {
+                try {
+                    long amount = Long.parseLong(val);
+                    if (amount > currentUser.balance) {
+                        Toast.makeText(this, "Saldo tidak cukup!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (amount < 10000) {
+                        Toast.makeText(this, "Minimal penarikan Rp 10.000", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    
+                    long newBalance = currentUser.balance - amount;
+                    mUserRef.child("balance").setValue(newBalance).addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(ProfileActivity.this, "Penarikan Berhasil Diproses!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } catch (Exception e) {
+                    Toast.makeText(this, "Nominal tidak valid", Toast.LENGTH_SHORT).show();
+                }
             }
         });
+        builder.setNegativeButton("Batal", null);
         builder.show();
     }
 }

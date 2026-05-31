@@ -3,6 +3,7 @@ package com.example.projek_uas;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -23,13 +24,15 @@ public class HomeActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private DatabaseReference mUserRef;
     private User currentUser;
+    private static final String DB_URL = "https://uas-bobile-default-rtdb.asia-southeast1.firebasedatabase.app/";
 
+    // UPDATE: Menggunakan nama file yang sudah kamu ganti di drawable
     private int[] memeIcons = {
-            android.R.drawable.ic_menu_gallery,
-            android.R.drawable.ic_menu_camera,
-            android.R.drawable.ic_menu_call,
-            android.R.drawable.ic_menu_send,
-            android.R.drawable.ic_menu_view
+            R.drawable.bombardino,
+            R.drawable.tungtungtung,
+            R.drawable.brrbrrpatapim,
+            R.drawable.capucinoassassino,
+            R.drawable.tralalelotralala
     };
     private int[] currentResults = new int[9];
     private boolean isSpinning = false;
@@ -47,7 +50,7 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        mUserRef = FirebaseDatabase.getInstance().getReference("users").child(mAuth.getUid());
+        mUserRef = FirebaseDatabase.getInstance(DB_URL).getReference("users").child(mAuth.getUid());
         loadUserData();
 
         binding.bottomNavigation.setSelectedItemId(R.id.nav_home);
@@ -76,13 +79,19 @@ public class HomeActivity extends AppCompatActivity {
                 }
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("HomeActivity", "DB Error: " + error.getMessage());
+            }
         });
     }
 
     private void spin() {
         if (isSpinning) return;
-        if (currentUser == null || currentUser.balance < 10000) {
+        if (currentUser == null) {
+            Toast.makeText(this, "Data belum dimuat...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (currentUser.balance < 10000) {
             Toast.makeText(this, "Saldo tidak cukup!", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -94,7 +103,6 @@ public class HomeActivity extends AppCompatActivity {
         Random random = new Random();
         Handler handler = new Handler();
         
-        // Visual animation effect
         for (int i = 0; i < 10; i++) {
             handler.postDelayed(() -> {
                 for (int j = 0; j < 9; j++) {
@@ -125,32 +133,30 @@ public class HomeActivity extends AppCompatActivity {
 
     private void calculateWin() {
         int matches = 0;
-        // Rows
         if (currentResults[0] == currentResults[1] && currentResults[1] == currentResults[2]) matches++;
         if (currentResults[3] == currentResults[4] && currentResults[4] == currentResults[5]) matches++;
         if (currentResults[6] == currentResults[7] && currentResults[7] == currentResults[8]) matches++;
-        // Cols
         if (currentResults[0] == currentResults[3] && currentResults[3] == currentResults[6]) matches++;
         if (currentResults[1] == currentResults[4] && currentResults[4] == currentResults[7]) matches++;
         if (currentResults[2] == currentResults[5] && currentResults[5] == currentResults[8]) matches++;
-        // Diagonals
         if (currentResults[0] == currentResults[4] && currentResults[4] == currentResults[8]) matches++;
         if (currentResults[2] == currentResults[4] && currentResults[4] == currentResults[6]) matches++;
 
-        long winAmount = matches * 50000;
+        long winAmount = (long) matches * 50000;
         if (winAmount > 0) {
             currentUser.balance += winAmount;
             mUserRef.child("balance").setValue(currentUser.balance);
             Toast.makeText(this, "MENANG! Dapat Rp " + String.format("%,d", winAmount), Toast.LENGTH_LONG).show();
         }
-
         saveTransaction(1, 10000, winAmount, matches + " matches found");
     }
 
     private void saveTransaction(int pulls, long cost, long win, String details) {
-        DatabaseReference historyRef = FirebaseDatabase.getInstance().getReference("history").child(mAuth.getUid());
+        DatabaseReference historyRef = FirebaseDatabase.getInstance(DB_URL).getReference("history").child(mAuth.getUid());
         String id = historyRef.push().getKey();
-        Transaction t = new Transaction(id, System.currentTimeMillis(), pulls, cost, win, details);
-        historyRef.child(id).setValue(t);
+        if (id != null) {
+            Transaction t = new Transaction(id, System.currentTimeMillis(), pulls, cost, win, details);
+            historyRef.child(id).setValue(t);
+        }
     }
 }

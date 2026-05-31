@@ -6,7 +6,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -29,6 +31,9 @@ public class HistoryActivity extends AppCompatActivity {
     private ActivityHistoryBinding binding;
     private List<Transaction> transactionList = new ArrayList<>();
     private HistoryAdapter adapter;
+    // FIX: Gunakan URL Region Singapore agar sinkron
+    private static final String DB_URL = "https://uas-bobile-default-rtdb.asia-southeast1.firebasedatabase.app/";
+    private DatabaseReference mHistoryRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,9 +43,12 @@ public class HistoryActivity extends AppCompatActivity {
 
         FirebaseAuth auth = FirebaseAuth.getInstance();
         if (auth.getCurrentUser() == null) {
+            startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
         }
+
+        mHistoryRef = FirebaseDatabase.getInstance(DB_URL).getReference("history").child(auth.getUid());
 
         binding.rvHistory.setLayoutManager(new LinearLayoutManager(this));
         adapter = new HistoryAdapter(transactionList);
@@ -59,8 +67,13 @@ public class HistoryActivity extends AppCompatActivity {
             return id == R.id.nav_history;
         });
 
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("history").child(auth.getUid());
-        ref.addValueEventListener(new ValueEventListener() {
+        binding.btnClearHistory.setOnClickListener(v -> confirmClearHistory());
+
+        loadHistoryData();
+    }
+
+    private void loadHistoryData() {
+        mHistoryRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 transactionList.clear();
@@ -70,15 +83,42 @@ public class HistoryActivity extends AppCompatActivity {
                 }
                 Collections.reverse(transactionList);
                 adapter.notifyDataSetChanged();
+                
+                // Hapus message "Belum ada riwayat" agar tidak bentrok
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(HistoryActivity.this, "Gagal memuat data: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
+    }
+
+    private void confirmClearHistory() {
+        if (transactionList.isEmpty()) {
+            Toast.makeText(this, "Riwayat sudah kosong", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Hapus Riwayat")
+                .setMessage("Apakah Anda yakin ingin menghapus semua riwayat spin?")
+                .setPositiveButton("Ya, Hapus", (dialog, which) -> {
+                    mHistoryRef.removeValue().addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(HistoryActivity.this, "Riwayat berhasil dihapus", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(HistoryActivity.this, "Gagal menghapus riwayat", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                })
+                .setNegativeButton("Batal", null)
+                .show();
     }
 
     private static class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHolder> {
         private List<Transaction> list;
-        private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        private SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault());
 
         HistoryAdapter(List<Transaction> list) { this.list = list; }
 
@@ -93,15 +133,17 @@ public class HistoryActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Transaction t = list.get(position);
             holder.tvDate.setText(sdf.format(new Date(t.timestamp)));
-            holder.tvPulls.setText(t.pullCount + "x Pull (-Rp " + String.format("%,d", t.cost) + ")");
-            holder.tvResult.setText("+Rp " + String.format("%,d", t.result));
-            holder.tvDetails.setText(t.details);
+            holder.tvPulls.setText("Spin: -Rp " + String.format("%,d", t.cost));
             
             if (t.result > 0) {
-                holder.tvResult.setTextColor(0xFF4CAF50); // Green
+                holder.tvResult.setText("+Rp " + String.format("%,d", t.result));
+                holder.tvResult.setTextColor(0xFF4CAF50);
             } else {
-                holder.tvResult.setTextColor(0xFFF44336); // Red
+                holder.tvResult.setText("+Rp 0");
+                holder.tvResult.setTextColor(0xFFF44336);
             }
+            
+            holder.tvDetails.setText(t.details);
         }
 
         @Override

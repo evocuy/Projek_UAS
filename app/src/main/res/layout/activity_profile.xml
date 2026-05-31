@@ -2,69 +2,150 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/bottomNavigation"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:gravity="center_horizontal">
+        android:layout_above="@+id/bottomNavigation">
 
-        <ImageView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@android:drawable/ic_menu_myplaces"
-            android:layout_marginTop="32dp"
-            android:layout_marginBottom="16dp"/>
-
-        <EditText
-            android:id="@+id/etProfileName"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Name"
-            android:textAlignment="center"
-            android:textSize="20sp"/>
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center_horizontal">
 
-        <Button
-            android:id="@+id/btnUpdateName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Update Name"
-            android:layout_marginBottom="32dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PLAYER PROFILE"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_gold"
+                android:letterSpacing="0.1"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="32dp"/>
 
-        <TextView
-            android:id="@+id/tvProfileBalance"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Current Balance: Rp 0"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp"/>
+            <androidx.cardview.widget.CardView
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                app:cardCornerRadius="50dp"
+                app:cardBackgroundColor="@color/card_dark"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp">
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@android:drawable/ic_menu_myplaces"
+                    android:padding="20dp"
+                    app:tint="@color/primary_gold"/>
+            </androidx.cardview.widget.CardView>
 
-        <Button
-            android:id="@+id/btnTopUp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Top Up Saldo"
-            android:backgroundTint="#4CAF50"/>
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Player Name"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/primary_gold"
+                app:boxStrokeColor="@color/primary_gold"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <Button
-            android:id="@+id/btnLogout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Logout"
-            android:layout_marginTop="16dp"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etProfileName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_main"
+                    android:inputType="textPersonName"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
-    </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUpdateName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save Changes"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="32dp"
+                app:cornerRadius="8dp"
+                app:backgroundTint="@color/card_dark"
+                android:textColor="@color/primary_gold"
+                style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/card_dark"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CURRENT BALANCE"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:letterSpacing="0.1"/>
+
+                    <TextView
+                        android:id="@+id/tvProfileBalance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rp 0"
+                        android:textColor="@color/accent_neon_blue"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp"/>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTopUp"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="TOP UP SALDO"
+                app:cornerRadius="12dp"
+                app:backgroundTint="@color/status_win"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnWithdraw"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="TARIK SALDO"
+                app:cornerRadius="12dp"
+                app:backgroundTint="@color/status_loss"
+                android:textStyle="bold"
+                android:layout_marginBottom="24dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLogout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LOGOUT"
+                android:textColor="@color/status_loss"
+                style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+        </LinearLayout>
+    </ScrollView>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:background="@color/card_dark"
+        app:itemIconTint="@color/accent_neon_blue"
+        app:itemTextColor="@color/text_main"
         app:menu="@menu/bottom_nav_menu" />
 
 </RelativeLayout>

@@ -1,16 +1,18 @@
 plugins {
     alias(libs.plugins.android.application)
-    id("com.google.gms.google-services")
+    alias(libs.plugins.google.services)
 }
 
 android {
     namespace = "com.example.projek_uas"
+    // Diperbarui ke 36 sesuai permintaan library androidx.core
     compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.projek_uas"
-        minSdk = 29
-        targetSdk = 36
+        // Diperbarui ke 26 agar support adaptive-icon
+        minSdk = 26
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 

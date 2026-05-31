@@ -2,18 +2,18 @@ package com.example.projek_uas;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.projek_uas.databinding.ActivityLoginBinding;
-import com.example.projek_uas.models.User;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 
 public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding binding;
     private FirebaseAuth mAuth;
-    private DatabaseReference mDatabase;
+    private static final String TAG = "LoginActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,7 +22,6 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         mAuth = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         if (mAuth.getCurrentUser() != null) {
             startActivity(new Intent(this, HomeActivity.class));
@@ -30,43 +29,35 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         binding.btnLogin.setOnClickListener(v -> login());
-        binding.btnRegister.setOnClickListener(v -> register());
+        binding.btnRegister.setOnClickListener(v -> {
+            startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+        });
     }
 
     private void login() {
         String email = binding.etEmail.getText().toString().trim();
         String password = binding.etPassword.getText().toString().trim();
 
-        if (email.isEmpty() || password.isEmpty()) return;
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Email/Password kosong", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
+        binding.btnLogin.setEnabled(false);
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
+                    binding.btnLogin.setEnabled(true);
                     if (task.isSuccessful()) {
                         startActivity(new Intent(LoginActivity.this, HomeActivity.class));
                         finish();
                     } else {
-                        Toast.makeText(LoginActivity.this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
-    private void register() {
-        String email = binding.etEmail.getText().toString().trim();
-        String password = binding.etPassword.getText().toString().trim();
-
-        if (email.isEmpty() || password.isEmpty()) return;
-
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        String uid = mAuth.getCurrentUser().getUid();
-                        User user = new User(uid, "User " + uid.substring(0, 5), email, 100000); // Initial 100k
-                        mDatabase.child("users").child(uid).setValue(user);
+                        Exception e = task.getException();
+                        String msg = "Login Gagal: " + (e != null ? e.getMessage() : "Unknown");
+                        if (e instanceof FirebaseAuthInvalidUserException) msg = "Email tidak terdaftar";
+                        if (e instanceof FirebaseAuthInvalidCredentialsException) msg = "Password salah";
                         
-                        startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-                        finish();
-                    } else {
-                        Toast.makeText(LoginActivity.this, "Registration Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, "Login Error", e);
+                        Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_LONG).show();
                     }
                 });
     }

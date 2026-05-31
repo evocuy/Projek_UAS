@@ -16,25 +16,25 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ANOMALI"
-            android:textSize="40sp"
-            android:textStyle="bold"
-            android:textColor="@color/primary_gold"
-            android:letterSpacing="0.2"/>
+            android:text="JOIN THE"
+            android:textSize="14sp"
+            android:textColor="@color/accent_neon_blue"
+            android:letterSpacing="0.4"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CASINO SLOTS"
-            android:textSize="14sp"
-            android:textColor="@color/accent_neon_blue"
-            android:letterSpacing="0.4"
+            android:text="ANOMALI"
+            android:textSize="40sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_gold"
+            android:letterSpacing="0.2"
             android:layout_marginBottom="48dp"/>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email"
+            android:hint="Email Address"
             android:textColorHint="@color/text_secondary"
             app:hintTextColor="@color/primary_gold"
             app:boxStrokeColor="@color/primary_gold"
@@ -44,7 +44,7 @@
             android:layout_marginBottom="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etEmail"
+                android:id="@+id/etEmailRegister"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_main"
@@ -54,7 +54,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Password"
+            android:hint="Create Password"
             android:textColorHint="@color/text_secondary"
             app:hintTextColor="@color/primary_gold"
             app:boxStrokeColor="@color/primary_gold"
@@ -63,10 +63,10 @@
             app:passwordToggleEnabled="true"
             app:passwordToggleTint="@color/text_secondary"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="32dp">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPassword"
+                android:id="@+id/etPasswordRegister"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_main"
@@ -74,10 +74,10 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnLogin"
+            android:id="@+id/btnRegisterNow"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="LOGIN"
+            android:text="CREATE ACCOUNT"
             android:textSize="16sp"
             android:textStyle="bold"
             app:cornerRadius="12dp"
@@ -85,10 +85,10 @@
             android:textColor="@color/bg_dark"/>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRegister"
+            android:id="@+id/btnBackToLogin"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Don't have an account? Register"
+            android:text="Already have an account? Login"
             android:textColor="@color/accent_neon_blue"
             android:layout_marginTop="16dp"
             style="@style/Widget.MaterialComponents.Button.TextButton"
