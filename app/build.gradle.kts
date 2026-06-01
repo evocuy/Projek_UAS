@@ -5,12 +5,11 @@ plugins {
 
 android {
     namespace = "com.example.projek_uas"
-    // Diperbarui ke 36 sesuai permintaan library androidx.core
-    compileSdk = 36
+    // Menggunakan SDK 34 yang lebih stabil dan kemungkinan besar sudah terinstall
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.projek_uas"
-        // Diperbarui ke 26 agar support adaptive-icon
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -43,11 +42,11 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     
-    // Firebase
+    // Firebase BoM
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.database)
-    implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.analytics)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

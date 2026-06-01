@@ -50,6 +50,7 @@
                 android:textColorHint="@color/text_secondary"
                 app:hintTextColor="@color/primary_gold"
                 app:boxStrokeColor="@color/primary_gold"
+                android:layout_marginBottom="16dp"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -58,6 +59,25 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_main"
                     android:inputType="textPersonName"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Email Address"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/primary_gold"
+                app:boxStrokeColor="@color/primary_gold"
+                android:layout_marginBottom="8dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etProfileEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_main"
+                    android:enabled="false"
+                    android:inputType="textEmailAddress"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.button.MaterialButton

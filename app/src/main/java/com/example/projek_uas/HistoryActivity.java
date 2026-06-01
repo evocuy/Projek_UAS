@@ -15,14 +15,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.projek_uas.databinding.ActivityHistoryBinding;
 import com.example.projek_uas.models.Transaction;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -31,9 +28,8 @@ public class HistoryActivity extends AppCompatActivity {
     private ActivityHistoryBinding binding;
     private List<Transaction> transactionList = new ArrayList<>();
     private HistoryAdapter adapter;
-    // FIX: Gunakan URL Region Singapore agar sinkron
-    private static final String DB_URL = "https://uas-bobile-default-rtdb.asia-southeast1.firebasedatabase.app/";
-    private DatabaseReference mHistoryRef;
+    private FirebaseFirestore mFirestore;
+    private CollectionReference mHistoryRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +44,8 @@ public class HistoryActivity extends AppCompatActivity {
             return;
         }
 
-        mHistoryRef = FirebaseDatabase.getInstance(DB_URL).getReference("history").child(auth.getUid());
+        mFirestore = FirebaseFirestore.getInstance();
+        mHistoryRef = mFirestore.collection("history").document(auth.getUid()).collection("transactions");
 
         binding.rvHistory.setLayoutManager(new LinearLayoutManager(this));
         adapter = new HistoryAdapter(transactionList);
@@ -73,25 +70,22 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void loadHistoryData() {
-        mHistoryRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                transactionList.clear();
-                for (DataSnapshot ds : snapshot.getChildren()) {
-                    Transaction t = ds.getValue(Transaction.class);
-                    if (t != null) transactionList.add(t);
-                }
-                Collections.reverse(transactionList);
-                adapter.notifyDataSetChanged();
-                
-                // Hapus message "Belum ada riwayat" agar tidak bentrok
-            }
+        mHistoryRef.orderBy("timestamp", Query.Direction.DESCENDING)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) {
+                        Toast.makeText(HistoryActivity.this, "Gagal memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(HistoryActivity.this, "Gagal memuat data: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+                    if (snapshot != null) {
+                        transactionList.clear();
+                        for (com.google.firebase.firestore.DocumentSnapshot ds : snapshot.getDocuments()) {
+                            Transaction t = ds.toObject(Transaction.class);
+                            if (t != null) transactionList.add(t);
+                        }
+                        adapter.notifyDataSetChanged();
+                    }
+                });
     }
 
     private void confirmClearHistory() {
@@ -104,13 +98,12 @@ public class HistoryActivity extends AppCompatActivity {
                 .setTitle("Hapus Riwayat")
                 .setMessage("Apakah Anda yakin ingin menghapus semua riwayat spin?")
                 .setPositiveButton("Ya, Hapus", (dialog, which) -> {
-                    mHistoryRef.removeValue().addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(HistoryActivity.this, "Riwayat berhasil dihapus", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(HistoryActivity.this, "Gagal menghapus riwayat", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    // Firestore doesn't support deleting a whole collection from Android directly, 
+                    // we have to delete document by document.
+                    for (Transaction t : transactionList) {
+                        mHistoryRef.document(t.id).delete();
+                    }
+                    Toast.makeText(HistoryActivity.this, "Riwayat sedang dihapus...", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Batal", null)
                 .show();

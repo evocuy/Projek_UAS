@@ -12,21 +12,20 @@ import com.example.projek_uas.databinding.ActivityHomeBinding;
 import com.example.projek_uas.models.Transaction;
 import com.example.projek_uas.models.User;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import java.util.Random;
 
 public class HomeActivity extends AppCompatActivity {
     private ActivityHomeBinding binding;
     private FirebaseAuth mAuth;
-    private DatabaseReference mUserRef;
+    private FirebaseFirestore mFirestore;
+    private DocumentReference mUserRef;
     private User currentUser;
-    private static final String DB_URL = "https://uas-bobile-default-rtdb.asia-southeast1.firebasedatabase.app/";
+    private ListenerRegistration mUserListener;
+    private static final String TAG = "HomeActivity";
 
-    // UPDATE: Menggunakan nama file yang sudah kamu ganti di drawable
     private int[] memeIcons = {
             R.drawable.bombardino,
             R.drawable.tungtungtung,
@@ -50,7 +49,8 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        mUserRef = FirebaseDatabase.getInstance(DB_URL).getReference("users").child(mAuth.getUid());
+        mFirestore = FirebaseFirestore.getInstance();
+        mUserRef = mFirestore.collection("users").document(mAuth.getUid());
         loadUserData();
 
         binding.bottomNavigation.setSelectedItemId(R.id.nav_home);
@@ -70,17 +70,22 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void loadUserData() {
-        mUserRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                currentUser = snapshot.getValue(User.class);
+        mUserListener = mUserRef.addSnapshotListener((snapshot, e) -> {
+            if (e != null) {
+                Log.e(TAG, "Listen failed.", e);
+                Toast.makeText(this, "Error Database: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (snapshot != null && snapshot.exists()) {
+                currentUser = snapshot.toObject(User.class);
                 if (currentUser != null) {
                     binding.tvBalanceHome.setText("Balance: Rp " + String.format("%,d", currentUser.balance));
+                    // Update header title with user name if you want
+                    Log.d(TAG, "Data loaded: " + currentUser.name);
                 }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("HomeActivity", "DB Error: " + error.getMessage());
+            } else {
+                Toast.makeText(this, "Profil belum dibuat di database!", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -88,7 +93,7 @@ public class HomeActivity extends AppCompatActivity {
     private void spin() {
         if (isSpinning) return;
         if (currentUser == null) {
-            Toast.makeText(this, "Data belum dimuat...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Menghubungkan ke database...", Toast.LENGTH_SHORT).show();
             return;
         }
         if (currentUser.balance < 10000) {
@@ -98,7 +103,7 @@ public class HomeActivity extends AppCompatActivity {
 
         isSpinning = true;
         currentUser.balance -= 10000;
-        mUserRef.child("balance").setValue(currentUser.balance);
+        mUserRef.update("balance", currentUser.balance);
 
         Random random = new Random();
         Handler handler = new Handler();
@@ -145,18 +150,23 @@ public class HomeActivity extends AppCompatActivity {
         long winAmount = (long) matches * 50000;
         if (winAmount > 0) {
             currentUser.balance += winAmount;
-            mUserRef.child("balance").setValue(currentUser.balance);
+            mUserRef.update("balance", currentUser.balance);
             Toast.makeText(this, "MENANG! Dapat Rp " + String.format("%,d", winAmount), Toast.LENGTH_LONG).show();
         }
         saveTransaction(1, 10000, winAmount, matches + " matches found");
     }
 
     private void saveTransaction(int pulls, long cost, long win, String details) {
-        DatabaseReference historyRef = FirebaseDatabase.getInstance(DB_URL).getReference("history").child(mAuth.getUid());
-        String id = historyRef.push().getKey();
-        if (id != null) {
-            Transaction t = new Transaction(id, System.currentTimeMillis(), pulls, cost, win, details);
-            historyRef.child(id).setValue(t);
+        DocumentReference historyRef = mFirestore.collection("history").document(mAuth.getUid()).collection("transactions").document();
+        Transaction t = new Transaction(historyRef.getId(), System.currentTimeMillis(), pulls, cost, win, details);
+        historyRef.set(t).addOnFailureListener(e -> Log.e(TAG, "Gagal simpan histori", e));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mUserListener != null) {
+            mUserListener.remove();
         }
     }
 }

@@ -3,7 +3,6 @@ package com.example.projek_uas;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
@@ -16,19 +15,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.projek_uas.databinding.ActivityProfileBinding;
 import com.example.projek_uas.models.User;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 public class ProfileActivity extends AppCompatActivity {
     private ActivityProfileBinding binding;
     private FirebaseAuth mAuth;
-    private DatabaseReference mUserRef;
+    private FirebaseFirestore mFirestore;
+    private DocumentReference mUserRef;
     private User currentUser;
+    private ListenerRegistration mUserListener;
     private static final String TAG = "ProfileActivity";
-    private static final String DB_URL = "https://uas-bobile-default-rtdb.asia-southeast1.firebasedatabase.app/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +41,9 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        try {
-            mUserRef = FirebaseDatabase.getInstance(DB_URL).getReference("users").child(mAuth.getUid());
-            loadUserData();
-        } catch (Exception e) {
-            Log.e(TAG, "DB Init Error", e);
-        }
+        mFirestore = FirebaseFirestore.getInstance();
+        mUserRef = mFirestore.collection("users").document(mAuth.getUid());
+        loadUserData();
 
         binding.btnUpdateName.setOnClickListener(v -> {
             String newName = binding.etProfileName.getText().toString().trim();
@@ -57,9 +52,12 @@ public class ProfileActivity extends AppCompatActivity {
                 return;
             }
             
-            mUserRef.child("name").setValue(newName).addOnCompleteListener(task -> {
+            mUserRef.update("name", newName).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     Toast.makeText(ProfileActivity.this, "Nama diperbarui!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Update failed", task.getException());
+                    Toast.makeText(this, "Gagal update: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -103,22 +101,28 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void loadUserData() {
-        mUserRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    currentUser = snapshot.getValue(User.class);
-                    if (currentUser != null) {
-                        if (!binding.etProfileName.hasFocus()) {
-                            binding.etProfileName.setText(currentUser.name);
-                        }
-                        binding.tvProfileBalance.setText("Current Balance: Rp " + String.format("%,d", currentUser.balance));
-                    }
-                }
+        mUserListener = mUserRef.addSnapshotListener((snapshot, e) -> {
+            if (e != null) {
+                Log.e(TAG, "Listen failed.", e);
+                Toast.makeText(this, "Error Firestore: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                return;
             }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e(TAG, "Load Error: " + error.getMessage());
+
+            if (snapshot != null && snapshot.exists()) {
+                currentUser = snapshot.toObject(User.class);
+                if (currentUser != null) {
+                    Log.d(TAG, "User data loaded: " + currentUser.name);
+                    if (!binding.etProfileName.hasFocus()) {
+                        binding.etProfileName.setText(currentUser.name);
+                    }
+                    if (binding.etProfileEmail != null) {
+                        binding.etProfileEmail.setText(currentUser.email);
+                    }
+                    binding.tvProfileBalance.setText("Current Balance: Rp " + String.format("%,d", currentUser.balance));
+                }
+            } else {
+                Log.w(TAG, "No such document for UID: " + mAuth.getUid());
+                Toast.makeText(this, "Data User tidak ditemukan di database!", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -159,7 +163,7 @@ public class ProfileActivity extends AppCompatActivity {
                 try {
                     long amount = Long.parseLong(val);
                     long newBalance = currentUser.balance + amount;
-                    mUserRef.child("balance").setValue(newBalance).addOnCompleteListener(task -> {
+                    mUserRef.update("balance", newBalance).addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             Toast.makeText(ProfileActivity.this, "Top Up Berhasil!", Toast.LENGTH_SHORT).show();
                         }
@@ -218,7 +222,7 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                     
                     long newBalance = currentUser.balance - amount;
-                    mUserRef.child("balance").setValue(newBalance).addOnCompleteListener(task -> {
+                    mUserRef.update("balance", newBalance).addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             Toast.makeText(ProfileActivity.this, "Penarikan Berhasil Diproses!", Toast.LENGTH_SHORT).show();
                         }
@@ -230,5 +234,13 @@ public class ProfileActivity extends AppCompatActivity {
         });
         builder.setNegativeButton("Batal", null);
         builder.show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mUserListener != null) {
+            mUserListener.remove();
+        }
     }
 }
